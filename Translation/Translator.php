@@ -139,9 +139,44 @@ class Translator extends BaseTranslator
             }
         }
 
+        if($success)
+        {
+            // key has not been defined in any resource, so add it to the default resource
+            $resource = $this->getDefaultResource($domain,$locale);
+            $success = $dumper->update($resource, $id, $value);
+            var_dump($success);
+            die;
+        }
+
         $this->loadCatalogue($locale);
 
         return $success;
+    }
+
+
+    private $defaultResourcePath = 'frontend/Resources/translations';
+
+    /**
+     * Gets the first resource that matches the default resource path
+     * @param $domain
+     * @param $locale
+     * @return mixed
+     */
+    public function getDefaultResource($domain,$locale)
+    {
+        $catalog = $this->getCatalog($locale);
+        $resources = $this->getMatchedResources($catalog, $domain, $locale);
+
+        foreach($resources as $resource)
+        {
+            $path = pathinfo($resource->getResource());
+            if(preg_match('%'.$this->defaultResourcePath.'$%',$path['dirname']))
+            {
+                return $resource;
+            }
+        }
+
+        die();
     }
 
     /**
