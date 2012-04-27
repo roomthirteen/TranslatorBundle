@@ -130,22 +130,34 @@ class Translator extends BaseTranslator
         if (empty($id)) {
             throw new InvalidTranslationKeyException('Empty key not allowed');
         }
-        $resources = $this->getResources($locale, $domain);
 
-        $success = false;
-        foreach ($resources as $resource) {
-            if ($dumper = $this->getDumper($resource)) {
-                $success = $dumper->update($resource, $id, $value);
+        $resources        = $this->getResources($locale, $domain);
+        $alwaysPutDefault = $this->container->getParameter('knplabs.translator.always_put_to_default_resource');
+
+        $success          = false;
+
+        if(!$alwaysPutDefault)
+        {
+            // only update an existing file if the feature is enabled
+            foreach ($resources as $resource) {
+                if ($dumper = $this->getDumper($resource)) {
+                    $success = $dumper->update($resource, $id, $value);
+                }
             }
         }
 
-        if($success)
+        // only put to default if always default is enabled or updating an existing was unsuccessfull
+        if($alwaysPutDefault || !$alwaysPutDefault && !$success)
         {
             // key has not been defined in any resource, so add it to the default resource
             $resource = $this->getDefaultResource($domain,$locale);
-            $success = $dumper->update($resource, $id, $value);
-            var_dump($success);
-            die;
+            $dumper   = $this->getDumper($resource);
+
+            if($dumper)
+            {
+                var_dump($resource);
+                $success = $dumper->update($resource, $id, $value);
+            }
         }
 
         $this->loadCatalogue($locale);
@@ -176,7 +188,23 @@ class Translator extends BaseTranslator
             }
         }
 
-        die();
+        // default resource has not been found, so create it
+        $base  = $this->container->get('kernel')->getRootDir().'/Resources/translations';
+        $name  = $domain.'.'.$locale.'.'.$this->container->getParameter('knplabs.translator.default_translation_format');
+        $file  = $base.'/'.$name;
+
+        if(!is_dir($base))
+        {
+            mkdir($base,0665,true);
+        }
+
+        if(!file_exists($file))
+        {
+            // setup a dummy content so the dumper will accept this file
+            file_put_contents($file,"dummy: ~\n");
+        }
+
+        return new \Symfony\Component\Config\Resource\FileResource($file);
     }
 
     /**

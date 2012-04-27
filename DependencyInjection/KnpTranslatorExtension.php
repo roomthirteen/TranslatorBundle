@@ -26,10 +26,15 @@ class KnpTranslatorExtension extends Extension
             $loader->load(sprintf('%s.xml', $basename));
         }
 
-        foreach (array('include_vendor_assets') as $attribute) {
+        foreach (array('include_vendor_assets','default_resource','always_put_to_default_resource','default_translation_format') as $attribute) {
             if (isset($config[$attribute])) {
                 $container->setParameter('knplabs.translator.'.$attribute, $config[$attribute]);
             }
+        }
+
+        if(isset($config['always_put_to_default_resource']) && $config['always_put_to_default_resource'] && !isset($config['default_resource']))
+        {
+            throw new \Exception("The 'always_put_to_default_resource' option has been activated but not 'default_resource' has been specified in configuration of knp_translator.");
         }
 
         // Use the "writer" translator instead of the default one

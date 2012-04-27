@@ -24,6 +24,9 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->booleanNode('include_vendor_assets')->defaultTrue()->end()
                 ->booleanNode('enabled')->defaultTrue()->end()
+                ->scalarNode('default_resource')->end()
+                ->booleanNode('always_put_to_default_resource')->defaultFalse()->end()
+                ->scalarNode('default_translation_format')->defaultValue('yml')->end()
             ->end()
         ;
 
